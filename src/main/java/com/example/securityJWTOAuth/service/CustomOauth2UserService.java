@@ -19,6 +19,7 @@ import java.util.Optional;
 public class CustomOauth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
+    private final UserService userService;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -44,7 +45,7 @@ public class CustomOauth2UserService extends DefaultOAuth2UserService {
         RoleType role = RoleType.ROLE_OAUTH;
 
         Optional<User> userEntityOptional = userRepository.findByUsername(username);
-        createOrUpdateUser(userEntityOptional, email, role, username, name);
+        userService.createOrUpdateUser(userEntityOptional, email, role, username, name);
 
         UserDTO userDTO = new UserDTO(username, name, role.toString());
 
@@ -53,18 +54,5 @@ public class CustomOauth2UserService extends DefaultOAuth2UserService {
 
     }
 
-    @Transactional
-    public User createOrUpdateUser(Optional<User> userEntityOptional, String email, RoleType role, String username, String name) {
-        return userEntityOptional
-                .map(userEntity ->{
-                    userEntity.setEmail(email);
-                    userEntity.setRole(role);
-                    userEntity.setName(name);
-                    return userEntity;
-                })
-                .orElseGet(()-> {
-                    User newUserEntity = new User(username, name, email, role);
-                    return userRepository.save(newUserEntity);
-                });
-    }
+
 }

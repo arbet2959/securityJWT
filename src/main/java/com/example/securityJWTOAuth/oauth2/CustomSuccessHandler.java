@@ -47,7 +47,7 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         response.addCookie(jwtUtil.createCookie("access",access));
         response.addCookie(jwtUtil.createCookie("refresh",refresh));
         response.sendRedirect("http://localhost:8080/cookieToheader");
-        //front에서 axios로 쿠키에있는 access Token를 헤더로 받아오도록 하려고 했지만 httponly설정...
+        //front에서 쿠키에있는 access Token를 헤더로 받아오도록 하려고 했지만 httponly설정...
     }
 
 }
