@@ -3,6 +3,7 @@ package com.example.securityJWTOAuth.config;
 import com.example.securityJWTOAuth.jwt.CustomLogoutFilter;
 import com.example.securityJWTOAuth.jwt.JWTFilter;
 import com.example.securityJWTOAuth.jwt.JWTUtil;
+import com.example.securityJWTOAuth.jwt.LoginFilter;
 import com.example.securityJWTOAuth.oauth2.CustomSuccessHandler;
 import com.example.securityJWTOAuth.repository.RefreshRepository;
 import com.example.securityJWTOAuth.service.CustomOauth2UserService;
@@ -10,9 +11,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
@@ -30,6 +34,15 @@ public class SecurityConfig {
     private final JWTUtil jwtUtil;
     private final CustomSuccessHandler customSuccessHandler;
     private final RefreshRepository refreshRepository;
+    private final AuthenticationConfiguration authenticationConfiguration;
+    @Bean
+    public BCryptPasswordEncoder bCryptPasswordEncoder(){
+        return new BCryptPasswordEncoder();
+    }
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
@@ -61,8 +74,10 @@ public class SecurityConfig {
                     }
                 }));
 
-        http.addFilterAfter(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);
-        http.addFilterAt(new CustomLogoutFilter(jwtUtil,refreshRepository), LogoutFilter.class);
+        http
+                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration),jwtUtil,refreshRepository), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAt(new CustomLogoutFilter(jwtUtil,refreshRepository), LogoutFilter.class);
 
         //OAuth2
         http.oauth2Login((oauth2) -> oauth2
